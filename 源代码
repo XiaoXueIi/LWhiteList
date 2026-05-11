@@ -1,0 +1,786 @@
+// LWhiteList.js - 答题插件
+
+const pluginName = "LWhiteList";
+const version = "1.0.0";
+
+// 注册插件
+ll.registerPlugin(pluginName, "答题插件", [1, 0, 0], {});
+
+// 文件路径
+const DATA_PATH = "plugins/LWhiteList/data.json";
+const CONFIG_PATH = "plugins/LWhiteList/config.json";
+const WHITELIST_PATH = "plugins/LWhiteList/whitelist.json";
+const BLACKLIST_PATH = "plugins/LWhiteList/blacklist.json"; // 新增黑名单文件
+
+// 默认配置
+const defaultConfig = {
+    "服务器规则": [
+        "§l§6青沐晞服务器",
+        "§eIP: es912.top  端口: 20100",
+        "",
+        "§l§c生存服总法典",
+        "",
+        "§l§e规则类",
+        "§71.禁止一切卡服性的生电机器",
+        "§72.请勿使用运输矿车，用漏斗矿车代替",
+        "§73.禁止一切刷沙机，发现了就拆。",
+        "§74.禁止利用服务器的漏洞刷物等",
+        "§75.禁止使用外挂",
+        "§7  举报者奖励1w，外挂者永久封号",
+        "§76.禁止偷家",
+        "§7  被偷家的人可以通过截图证据举报",
+        "§7  偷家者将除以没收其全部财产",
+        "§77.禁止卡服炸服,参与者封号处理",
+        "§78.禁止矿透",
+        "§79.严禁现金交易",
+        "§710.严禁涉及群规底线问题",
+        "§711.服务器丢入漏斗等容器的收纳袋会被清理",
+        "",
+        "§l§e财产类",
+        "§71.被抄家没收其全部财产",
+        "§72.被清理类插件清理的物品不会赔偿",
+        "§73.服务器有领地插件，请圈地保护财产",
+        "§74.Bug导致财产丢失看情况处理",
+        "",
+        "§l§e政治类",
+        "§71.禁止第三方宣传、邪教等内容",
+        "§72.禁止辱骂他人"
+    ],
+    "题目配置": [
+        {
+            "标题": "第 1 题",
+            "题目": "你是什么类型的玩家？",
+            "选项": {
+                "A": "生存",
+                "B": "生电",
+                "C": "建筑",
+                "D": "PVP",
+                "E": "红石",
+                "F": "啥都会一些"
+            },
+            "分数": 10
+        },
+        {
+            "标题": "第 2 题",
+            "题目": "你是否能做到不拆家,不打人,不矿透,不开挂,不刷物？",
+            "选项": {
+                "A": "是",
+                "B": "否"
+            },
+            "分数": 10
+        },
+        {
+            "标题": "第 3 题",
+            "题目": "如果你在路边发现了一个箱子，你会选择怎么做?",
+            "选项": {
+                "A": "不管它",
+                "B": "拿走"
+            },
+            "分数": 10
+        },
+        {
+            "标题": "第 4 题",
+            "题目": "如果你发现了一个熊孩子，你应该怎么做？",
+            "选项": {
+                "A": "干他",
+                "B": "群里举报"
+            },
+            "分数": 10
+        },
+        {
+            "标题": "第 5 题",
+            "题目": "如果你进服游玩发现有人欺负你，你应该怎么做？",
+            "选项": {
+                "A": "骂他拆他基地，然后退服",
+                "B": "群里举报"
+            },
+            "分数": 10
+        },
+        {
+            "标题": "第 6 题",
+            "题目": "如果你发现你的东西被偷了你应该怎么做？",
+            "选项": {
+                "A": "偷别人东西",
+                "B": "群里举报"
+            },
+            "分数": 10
+        },
+        {
+            "标题": "第 7 题",
+            "题目": "请做个简单的自我介绍(游戏历程)，不低于20字",
+            "类型": "输入",
+            "分数": 20
+        },
+        {
+            "标题": "第 8 题",
+            "题目": "请填写QQ号",
+            "类型": "输入",
+            "分数": 10
+        },
+        {
+            "标题": "第 9 题",
+            "题目": "请填写游戏ID",
+            "类型": "输入",
+            "分数": 10
+        }
+    ],
+    "默认白名单": [
+        "Steve",
+        "Alex"
+    ],
+    "黑名单提示": "§c你已被加入黑名单，无法进入服务器！",
+    "提示消息": {
+        "答题提醒": "§c请完成答题！",
+        "输入不能为空": "§c输入不能为空！",
+        "自我介绍太短": "§c自我介绍不能少于20字！当前字数：",
+        "提交成功": "§a问卷提交成功！请等待管理员审核。",
+        "等待审核": "§e你的问卷已提交，请等待管理员审核...\n§7审核通过后即可正常游戏",
+        "无权限": "§c你没有权限使用此命令！",
+        "审核通过": "§a已将玩家 {name} 添加到白名单！",
+        "审核拒绝": "§c已拒绝玩家 {name} 的申请，并加入黑名单",
+        "无答案数据": "§c该玩家没有答题数据或数据为空！",
+        "黑名单提示": "§c你已被加入黑名单，无法进入服务器！"
+    },
+    "其他设置": {
+        "延迟时间": 1000,
+        "自我介绍最小字数": 20,
+        "管理员权限等级": 1,
+        "黑名单是否踢出": true // 黑名单玩家是否被踢出
+    }
+};
+
+// 配置文件对象
+let configFile = new JsonConfigFile(CONFIG_PATH, JSON.stringify(defaultConfig, null, 4));
+
+// 存储数据
+let answeredPlayers = {};
+let whitelist = {};
+let blacklist = {}; // 黑名单列表
+
+// 缓存题目和规则
+let cachedQuestions = [];
+let cachedRules = [];
+let cachedMessages = {};
+let cachedSettings = {};
+
+// 更新缓存
+function updateCache() {
+    cachedQuestions = configFile.get("题目配置") || defaultConfig["题目配置"];
+    cachedRules = configFile.get("服务器规则") || defaultConfig["服务器规则"];
+    cachedMessages = configFile.get("提示消息") || defaultConfig["提示消息"];
+    cachedSettings = configFile.get("其他设置") || defaultConfig["其他设置"];
+    logger.info("§a[LWhiteList] 已更新配置缓存");
+}
+
+// 获取题目（从缓存）
+function getQuestions() {
+    return cachedQuestions;
+}
+
+// 获取规则（从缓存）
+function getRules() {
+    return cachedRules;
+}
+
+// 获取提示消息（从缓存）
+function getMessage(key, params = {}) {
+    let message = cachedMessages[key] || defaultConfig["提示消息"][key] || key;
+    
+    for (let param in params) {
+        message = message.replace(`{${param}}`, params[param]);
+    }
+    return message;
+}
+
+// 获取其他设置（从缓存）
+function getSetting(key) {
+    return cachedSettings[key] || defaultConfig["其他设置"][key];
+}
+
+// 获取规则文本
+function getRulesText() {
+    return getRules().join("\n");
+}
+
+
+// ============== 注册命令 ==============
+mc.listen("onServerStarted", () => {
+    const cmd = mc.newCommand("sh", "管理员审核命令", PermType.GameMasters, 0x80, "sh");
+    cmd.setEnum("action", ["sh"]);
+    cmd.mandatory("action", ParamType.Enum, "action", 1);
+    cmd.overload(["action"]);
+    cmd.setCallback((_cmd, _ori, out, res) => {});
+    cmd.setup();
+    
+    logger.info("§a[LWhiteList] 命令 /sh 注册成功");
+});
+
+// 初始化默认白名单
+function initDefaultWhitelist() {
+    let defaultPlayers = configFile.get("默认白名单") || defaultConfig["默认白名单"];
+    let added = 0;
+    
+    for (let playerName of defaultPlayers) {
+        if (!whitelist[playerName]) {
+            whitelist[playerName] = {
+                time: Date.now(),
+                admin: "System",
+                type: "default"
+            };
+            added++;
+        }
+    }
+    
+    if (added > 0) {
+        logger.info(`§a[LWhiteList] 已添加 ${added} 个默认白名单玩家`);
+        saveWhitelist();
+    }
+}
+
+// 读取白名单文件
+function loadWhitelist() {
+    try {
+        let path = WHITELIST_PATH;
+        if (File.exists(path)) {
+            let content = File.readFrom(path);
+            if (content && content.length > 0) {
+                whitelist = JSON.parse(content);
+                logger.info("§a[LWhiteList] 已加载白名单数据，当前白名单玩家：");
+                for (let name in whitelist) {
+                    logger.info(`  - ${name}`);
+                }
+            } else {
+                whitelist = {};
+                logger.info("§a[LWhiteList] 白名单文件为空，将创建默认白名单");
+                initDefaultWhitelist();
+            }
+        } else {
+            whitelist = {};
+            logger.info("§a[LWhiteList] 白名单文件不存在，将创建默认白名单");
+            initDefaultWhitelist();
+        }
+    } catch (e) {
+        logger.error("§c[LWhiteList] 加载白名单失败: " + e);
+        whitelist = {};
+        initDefaultWhitelist();
+    }
+}
+
+// 读取黑名单文件
+function loadBlacklist() {
+    try {
+        let path = BLACKLIST_PATH;
+        if (File.exists(path)) {
+            let content = File.readFrom(path);
+            if (content && content.length > 0) {
+                blacklist = JSON.parse(content);
+                logger.info("§c[LWhiteList] 已加载黑名单数据，当前黑名单玩家：");
+                for (let name in blacklist) {
+                    logger.info(`  - ${name}`);
+                }
+            } else {
+                blacklist = {};
+                logger.info("§a[LWhiteList] 黑名单文件为空");
+                saveBlacklist();
+            }
+        } else {
+            blacklist = {};
+            logger.info("§a[LWhiteList] 已创建新黑名单文件");
+            saveBlacklist();
+        }
+    } catch (e) {
+        logger.error("§c[LWhiteList] 加载黑名单失败: " + e);
+        blacklist = {};
+    }
+}
+
+// 保存白名单
+function saveWhitelist() {
+    try {
+        File.writeTo(WHITELIST_PATH, JSON.stringify(whitelist, null, 2));
+    } catch (e) {
+        logger.error("§c[LWhiteList] 保存白名单失败: " + e);
+    }
+}
+
+// 保存黑名单
+function saveBlacklist() {
+    try {
+        File.writeTo(BLACKLIST_PATH, JSON.stringify(blacklist, null, 2));
+    } catch (e) {
+        logger.error("§c[LWhiteList] 保存黑名单失败: " + e);
+    }
+}
+
+// 读取数据
+function loadData() {
+    try {
+        File.mkdir("plugins/LWhiteList");
+        
+        // 更新缓存
+        updateCache();
+        
+        // 加载答题数据
+        if (File.exists(DATA_PATH)) {
+            let content = File.readFrom(DATA_PATH);
+            if (content) {
+                answeredPlayers = JSON.parse(content);
+                logger.info("§a[LWhiteList] 已加载 " + Object.keys(answeredPlayers).length + " 名玩家答题数据");
+            }
+        } else {
+            answeredPlayers = {};
+            saveData();
+        }
+        
+        // 加载白名单
+        loadWhitelist();
+        
+        // 加载黑名单
+        loadBlacklist();
+        
+        logger.info("§a[LWhiteList] 配置文件已加载");
+        
+    } catch (e) {
+        logger.error("§c[LWhiteList] 加载数据失败: " + e);
+        answeredPlayers = {};
+    }
+}
+
+function saveData() {
+    try {
+        File.writeTo(DATA_PATH, JSON.stringify(answeredPlayers, null, 2));
+    } catch (e) {
+        logger.error("§c[LWhiteList] 保存答题数据失败: " + e);
+    }
+}
+
+// 检查玩家是否在白名单中
+function isInWhitelist(playerName) {
+    return whitelist && whitelist[playerName] !== undefined;
+}
+
+// 检查玩家是否在黑名单中
+function isInBlacklist(playerName) {
+    return blacklist && blacklist[playerName] !== undefined;
+}
+
+// 检查是否有管理员权限
+function hasPermission(player) {
+    if (!player) return false;
+    return player.isOP() || player.getPermissionLevel() >= getSetting("管理员权限等级");
+}
+
+// ============== 命令处理 ==============
+mc.listen("onPlayerCmd", (player, cmd) => {
+    if (cmd === "sh" || cmd === "/sh") {
+        if (!hasPermission(player)) {
+            player.sendText(getMessage("无权限"));
+            return false;
+        }
+        
+        showAdminForm(player);
+        return false;
+    }
+});
+
+// 显示管理员审核表单
+function showAdminForm(player) {
+    let form = mc.newSimpleForm();
+    form.setTitle("§l管理员审核系统");
+    
+    // 获取所有待审核的玩家（已答题、不在白名单、不在黑名单）
+    let pendingPlayers = [];
+    
+    for (let name in answeredPlayers) {
+        if (!isInWhitelist(name) && !isInBlacklist(name)) {
+            pendingPlayers.push(name);
+        }
+    }
+    
+    if (pendingPlayers.length === 0) {
+        form.setContent("§a当前没有待审核的玩家！");
+        form.addButton("§7关闭");
+        
+        player.sendForm(form, (pl, selected) => {
+            return false;
+        });
+        return;
+    }
+    
+    form.setContent("请选择要审核的玩家：");
+    
+    pendingPlayers.forEach(name => {
+        let data = answeredPlayers[name];
+        let time = new Date(data.time).toLocaleString();
+        form.addButton(`§e${name}\n§7提交时间: ${time}`);
+    });
+    
+    form.addButton("§c关闭");
+    
+    player.sendForm(form, (pl, selected) => {
+        if (!pl || selected === null || selected === pendingPlayers.length) return;
+        
+        let playerName = pendingPlayers[selected];
+        showPlayerAnswers(pl, playerName);
+    });
+}
+
+// 显示玩家答案详情
+function showPlayerAnswers(player, targetName) {
+    let data = answeredPlayers[targetName];
+    if (!data) {
+        player.sendText("§c找不到该玩家的答题数据！");
+        showAdminForm(player);
+        return;
+    }
+
+      let questions = getQuestions();
+    let answers = data.answers || [];
+    
+    // 构建答案文本
+    let content = `§l§6玩家: §e${targetName}\n`;
+    content += `§7提交时间: ${new Date(data.time).toLocaleString()}\n`;
+    content += `§7XUID: ${data.xuid || "未知"}\n`;
+    content += `§7UUID: ${data.uuid || "未知"}\n\n`;
+    
+    // 检查是否有答案数据
+    if (answers.length === 0) {
+        content += "§c该玩家没有答题数据或数据为空！\n";
+    } else {
+        content += "§l§6答题详情:\n";
+        
+        for (let i = 0; i < questions.length; i++) {
+            let q = questions[i];
+            let answer = answers[i] || "§c未作答";
+            
+            content += `\n§e${q["标题"]}§r\n`;
+            content += `§7题目: ${q["题目"]}§r\n`;
+            content += `§a答案: ${answer}§r\n`;
+        }
+    }
+    
+    // 创建表单显示答案
+    let form = mc.newSimpleForm();
+    form.setTitle(`§l审核玩家 - ${targetName}`);
+    form.setContent(content);
+    form.addButton("§a通过审核");
+    form.addButton("§c拒绝申请");
+    form.addButton("§7返回");
+    
+    player.sendForm(form, (pl, selected) => {
+        if (!pl || selected === null) return;
+        
+        if (selected === 0) {
+            approvePlayer(pl, targetName);
+        } else if (selected === 1) {
+            rejectPlayer(pl, targetName);
+        } else if (selected === 2) {
+            showAdminForm(pl);
+        }
+    });
+}
+
+// 通过审核
+function approvePlayer(admin, playerName) {
+    if (!whitelist) whitelist = {};
+    
+    whitelist[playerName] = {
+        time: Date.now(),
+        admin: admin.realName,
+        type: "approved"
+    };
+    saveWhitelist();
+    
+    logger.info(`§a[LWhiteList] 管理员 ${admin.realName} 通过了玩家 ${playerName} 的审核`);
+    admin.sendText(getMessage("审核通过", { name: playerName }));
+    
+    // 如果玩家在线，通知他
+    let player = mc.getPlayer(playerName);
+    if (player) {
+        player.sendText("§a恭喜！你的申请已通过审核，现在可以正常游戏了！");
+    }
+    
+    // 审核完成后返回管理员表单
+    showAdminForm(admin);
+}
+
+// 拒绝申请（加入黑名单）
+function rejectPlayer(admin, playerName) {
+    if (!blacklist) blacklist = {};
+    
+    blacklist[playerName] = {
+        time: Date.now(),
+        admin: admin.realName,
+        reason: "申请被拒绝",
+        originalData: answeredPlayers[playerName] // 保存原始答题数据
+    };
+    saveBlacklist();
+    
+    // 可选：从答题数据中移除（避免再次显示）
+    // delete answeredPlayers[playerName];
+    // saveData();
+    
+    logger.info(`§c[LWhiteList] 管理员 ${admin.realName} 拒绝了玩家 ${playerName} 的申请，已加入黑名单`);
+    admin.sendText(getMessage("审核拒绝", { name: playerName }));
+    
+    // 如果玩家在线，踢出并通知
+    let player = mc.getPlayer(playerName);
+    if (player) {
+        player.sendText("§c你的申请已被管理员拒绝，你已被加入黑名单！");
+        
+        // 如果设置踢出黑名单玩家
+        if (getSetting("黑名单是否踢出")) {
+            setTimeout(() => {
+                player.kick(getMessage("黑名单提示"));
+            }, 3000);
+        }
+    }
+    
+    // 拒绝完成后返回管理员表单
+    showAdminForm(admin);
+}
+
+// ============== 玩家答题系统 ==============
+let playerSession = {};
+
+// 直接显示答题表单
+function startExamination(player) {
+    let name = player.realName;
+    
+    playerSession[name] = {
+        currentIndex: 0,
+        answers: []
+    };
+    
+    showQuestion(player, 0);
+}
+
+function showQuestion(player, index) {
+    let name = player.realName;
+    let questions = getQuestions();
+    
+    if (index >= questions.length) {
+        finishExamination(player);
+        return;
+    }
+    
+    let q = questions[index];
+    
+    if (q["类型"] === "输入") {
+        showInputQuestion(player, index);
+    } else {
+        showChoiceQuestion(player, index);
+    }
+}
+
+function showChoiceQuestion(player, index) {
+    let name = player.realName;
+    let questions = getQuestions();
+    let q = questions[index];
+    
+    let form = mc.newSimpleForm();
+    form.setTitle(q["标题"]);
+    form.setContent(q["题目"]);
+    
+    let options = q["选项"];
+    for (let key in options) {
+        form.addButton(key + "：" + options[key]);
+    }
+    
+    player.sendForm(form, (pl, selected) => {
+        if (!pl) return;
+        
+        if (selected === null || selected === undefined) {
+            pl.sendText(getMessage("答题提醒"));
+            showQuestion(pl, index);
+            return;
+        }
+        
+        let optionKeys = Object.keys(q["选项"]);
+        let selectedKey = optionKeys[selected];
+        let selectedValue = q["选项"][selectedKey];
+        
+        if (!playerSession[name]) {
+            playerSession[name] = { currentIndex: index, answers: [] };
+        }
+        playerSession[name].answers[index] = selectedKey + "：" + selectedValue;
+        
+        showQuestion(pl, index + 1);
+    });
+}
+
+function showInputQuestion(player, index) {
+    let name = player.realName;
+    let questions = getQuestions();
+    let q = questions[index];
+    
+    let form = mc.newCustomForm();
+    form.setTitle(q["标题"]);
+    form.addInput(q["题目"], "请输入...");
+    
+    player.sendForm(form, (pl, formData) => {
+        if (!pl) return;
+        
+        if (formData === null || formData === undefined) {
+            pl.sendText(getMessage("答题提醒"));
+            showQuestion(pl, index);
+            return;
+        }
+        
+        let answer = formData[0] ? formData[0].trim() : "";
+        
+        if (answer === "") {
+            pl.sendText(getMessage("输入不能为空"));
+            showQuestion(pl, index);
+            return;
+        }
+
+              let minLength = getSetting("自我介绍最小字数");
+        if (index === 6 && answer.length < minLength) {
+            pl.sendText(getMessage("自我介绍太短") + answer.length);
+            showQuestion(pl, index);
+            return;
+        }
+        
+        if (!playerSession[name]) {
+            playerSession[name] = { currentIndex: index, answers: [] };
+        }
+        playerSession[name].answers[index] = answer;
+        
+        showQuestion(pl, index + 1);
+    });
+}
+
+function finishExamination(player) {
+    let name = player.realName;
+    let questions = getQuestions();
+    
+    if (!playerSession[name]) {
+        startExamination(player);
+        return;
+    }
+    
+    let answers = playerSession[name].answers;
+    
+    if (answers.length < questions.length) {
+        player.sendText("§c请完成所有题目！");
+        showQuestion(player, answers.length);
+        return;
+    }
+    
+    // 确保答案数组长度与题目数一致
+    while (answers.length < questions.length) {
+        answers.push("未作答");
+    }
+    
+    answeredPlayers[name] = {
+        answers: answers,
+        time: Date.now(),
+        xuid: player.xuid,
+        uuid: player.uuid
+    };
+    saveData();
+    
+    delete playerSession[name];
+    
+    player.sendText(getMessage("提交成功"));
+    
+    showWaitForm(player);
+}
+
+function showWaitForm(player) {
+    let name = player.realName;
+    
+    let form = mc.newSimpleForm();
+    form.setTitle("§l等待审核");
+    form.setContent(getRulesText() + "\n\n§e" + getMessage("等待审核"));
+    form.addButton("§7⏳ 刷新状态");
+    
+    player.sendForm(form, (pl, selected) => {
+        if (!pl) return;
+        
+        // 每次刷新时检查状态
+        if (isInWhitelist(name)) {
+            pl.sendText("§a你已经通过审核，可以正常游戏了！");
+            return;
+        }
+        
+        if (isInBlacklist(name)) {
+            pl.sendText("§c你已被加入黑名单，即将被踢出！");
+            if (getSetting("黑名单是否踢出")) {
+                setTimeout(() => {
+                    pl.kick(getMessage("黑名单提示"));
+                }, 2000);
+            }
+            return;
+        }
+        
+        showWaitForm(pl);
+    });
+}
+
+// ============== 玩家加入事件 ==============
+mc.listen("onJoin", (player) => {
+    let name = player.realName;
+    let delay = getSetting("延迟时间");
+    
+    setTimeout(() => {
+        // 先检查黑名单
+        if (isInBlacklist(name)) {
+            logger.info(`§c[LWhiteList] 玩家 ${name} 在黑名单中，将被踢出`);
+            player.sendText("§c你已被加入黑名单！");
+            if (getSetting("黑名单是否踢出")) {
+                setTimeout(() => {
+                    player.kick(getMessage("黑名单提示"));
+                }, 3000);
+            }
+            return;
+        }
+        
+        // 检查白名单
+        if (isInWhitelist(name)) {
+            return; // 直接返回，不显示任何表单
+        }
+        
+        // 如果已经提交过答题，显示等待界面
+        if (answeredPlayers[name]) {
+            showWaitForm(player);
+            return;
+        }
+        
+        // 检查是否有未完成的答题会话
+        if (playerSession[name]) {
+            let currentIndex = playerSession[name].answers.length;
+            showQuestion(player, currentIndex);
+        } else {
+            // 开始新的答题
+            startExamination(player);
+        }
+    }, delay);
+});
+
+// 玩家离开时清理会话
+mc.listen("onLeft", (player) => {
+    let name = player.realName;
+    // 不清除会话，以便下次进入继续答题
+});
+
+// 配置文件热重载
+mc.listen("onConsoleCmd", (cmd) => {
+    if (cmd === "reload config") {
+        updateCache();
+        logger.info("§a[LWhiteList] 配置已重新加载");
+        return true;
+    }
+});
+
+// 加载数据
+loadData();
+
+logger.info("§a[LWhiteList] 插件加载成功！");
+logger.info("§a[LWhiteList] 配置文件: " + CONFIG_PATH);
+logger.info("§a[LWhiteList] 答题数据文件: " + DATA_PATH);
+logger.info("§a[LWhiteList] 白名单文件: " + WHITELIST_PATH);
+logger.info("§a[LWhiteList] 黑名单文件: " + BLACKLIST_PATH);
+logger.info("§a[LWhiteList] 管理员命令: /sh");
+
